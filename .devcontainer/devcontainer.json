@@ -1,0 +1,81 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/rust
+{
+	"name": "Next.js x WASM",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			// Use the VARIANT arg to pick a Debian OS version: buster, bullseye
+			// Use bullseye when on local on arm64/Apple Silicon.
+			"VARIANT": "bullseye",
+			"USERNAME": "vscode"
+		}
+	},
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
+	],
+	"containerEnv": {
+		"CARGO_BUILD_TARGET_DIR": "/tmp/target",
+		"WWW_NODE_MODULES": "workspace/www/node_modules"
+	},
+	"mounts": [
+		"source=cargo_build_target_dir,target=/tmp/target,type=volume",
+		"source=node_modules,target=/workspace/www/node_modules,type=volume",
+	],
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"terminal.integrated.profiles.linux": {
+			"zsh": {
+				"path": "/bin/zsh",
+				"args": [
+					"-l"
+				]
+			}
+		},
+		"terminal.integrated.defaultProfiles.linux": "zsh",
+		"lldb.executable": "/usr/bin/lldb",
+		// VS Code don't watch files under ./target
+		"files.watcherExclude": {
+			"**/target/**": true
+		},
+		"rust-analyzer.checkOnSave.command": "clippy",
+		"rust-analyzer.diagnostics.disabled": [
+			"macro-error",
+			"missing-unsafe"
+		]
+	},
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		// UTILITY
+		"mutantdino.resourcemonitor",
+		// Rust
+		"vadimcn.vscode-lldb",
+		"matklad.rust-analyzer",
+		"tamasfe.even-better-toml",
+		"serayuzgur.crates",
+		"gruntfuggly.todo-tree",
+		// TOML
+		"bungcip.better-toml",
+		// Git
+		"mhutchie.git-graph",
+		"donjayamanne.githistory",
+		"eamodio.gitlens",
+		// Node.js
+		"dbaeumer.vscode-eslint",
+		"esbenp.prettier-vscode",
+		"stylelint.vscode-stylelint",
+		// HTML and React
+		"vincaslt.highlight-matching-tag",
+	],
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "sudo chown vscode ${RUSTUP_HOME} ${CARGO_HOME} ${CARGO_BUILD_TARGET_DIR} ${WWW_NODE_MODULES}",
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode",
+	"features": {
+		"node": "16"
+	}
+}

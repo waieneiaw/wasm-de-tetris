@@ -1,0 +1,26 @@
+[env]
+__MAKERS_WWW_DIR = "www"
+__MAKERS_WASM_DIR = "wasm"
+__MAKERS_WASM_OUT_DIR = "${__MAKERS_WWW_DIR}/src/@wasm"
+
+[tasks.setup]
+script = '''
+#!/usr/bin/env bash
+makers npm i
+'''
+
+[tasks.watch]
+script = '''
+#!/usr/bin/env bash
+cd ${__MAKERS_WASM_DIR} \
+  && cargo watch -i .gitignore \
+    -i "../${__MAKERS_WASM_OUT_DIR}/*" \
+    -s "wasm-pack build -d ../${__MAKERS_WASM_OUT_DIR}" &
+makers npm run dev
+'''
+
+[tasks.npm]
+script = '''
+#!/usr/bin/env bash
+cd ${__MAKERS_WWW_DIR} && npm ${@}
+'''
