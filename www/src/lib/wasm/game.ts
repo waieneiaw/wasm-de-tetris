@@ -47,7 +47,7 @@ const drawCells = (args: {
   cellSize: number;
   game: GameIO;
 }) => {
-  const cellsPtr = args.game.cells();
+  const cellsPtr = args.game.view_data_ptr();
   const width = args.game.width();
   const height = args.game.height();
 
@@ -58,7 +58,44 @@ const drawCells = (args: {
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const idx = getIndex(args.game, row, col);
-      args.ctx.fillStyle = cells[idx] === Cell.Empty ? GRID_COLOR : ALIVE_COLOR;
+      switch (cells[idx]) {
+        case Cell.Wall: {
+          args.ctx.fillStyle = ALIVE_COLOR;
+          break;
+        }
+        case Cell.I: {
+          args.ctx.fillStyle = '#00F0F0';
+          break;
+        }
+        case Cell.J: {
+          args.ctx.fillStyle = '#0000FF';
+          break;
+        }
+        case Cell.L: {
+          args.ctx.fillStyle = '#FF8800';
+          break;
+        }
+        case Cell.O: {
+          args.ctx.fillStyle = '#FFFF00';
+          break;
+        }
+        case Cell.S: {
+          args.ctx.fillStyle = '#88FF00';
+          break;
+        }
+        case Cell.T: {
+          args.ctx.fillStyle = '#FF00FF';
+          break;
+        }
+        case Cell.Z: {
+          args.ctx.fillStyle = '#FF0000';
+          break;
+        }
+        default: {
+          args.ctx.fillStyle = GRID_COLOR;
+          break;
+        }
+      }
 
       args.ctx.fillRect(
         col * (args.cellSize + 1) + 1,
