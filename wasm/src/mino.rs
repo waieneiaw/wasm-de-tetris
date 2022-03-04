@@ -47,9 +47,9 @@ pub const Z_MINO: Mino = [
 
 #[rustfmt::skip]
 pub const J_MINO: Mino = [
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
     [Cell::J,     Cell::J,     Cell::J,     Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::J,     Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];
 

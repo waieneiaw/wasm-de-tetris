@@ -124,7 +124,6 @@ impl Point {
 
     pub fn dropdown(&mut self, line: u32) {
         self.y += line;
-        console_log!("dropdown: {:?}", self.y);
     }
 }
 
@@ -165,9 +164,7 @@ impl Tetrimino {
 
         TetriminoKind::from(kind)
     }
-}
 
-impl Tetrimino {
     pub fn kind(&self) -> &TetriminoKind {
         &self.kind
     }
@@ -201,47 +198,71 @@ impl Tetrimino {
 
         self.blocks = new_blocks;
     }
+
+    pub fn dropdown(&mut self, line: u32) {
+        self.position.dropdown(line);
+    }
+}
+
+struct ControlledTetrimino {
+    mino: Tetrimino,
+    speed: usize,
+    drop_counter: usize,
+    last_dropped: usize,
+    threshold: usize,
+}
+
+impl ControlledTetrimino {
+    fn new(mino: Tetrimino) -> Self {
+        Self {
+            mino,
+            speed: 1,
+            drop_counter: 0,
+            last_dropped: 0,
+            threshold: 100,
+        }
+    }
+
+    pub fn rotate_left(&mut self) {
+        self.mino.rotate_left();
+    }
+
+    pub fn rotate_right(&mut self) {
+        self.mino.rotate_right();
+    }
+
+    pub fn dropdown(&mut self, line: u32) {
+        self.drop_counter += self.speed;
+        if self.drop_counter < self.last_dropped {
+            return;
+        }
+
+        self.last_dropped += self.threshold;
+        self.speed += 1;
+
+        self.mino.dropdown(line);
+    }
 }
 
 struct Playfield {
     width: u32,
     height: u32,
-    cells: Vec<Cell>,
-    cells2: Vec<Vec<Cell>>,
+    view_data: Vec<Cell>,
+    grid_data: Vec<Vec<Cell>>,
     current: Tetrimino,
     next: Tetrimino,
 }
 
 impl Playfield {
-    fn init(width: u32, height: u32) -> Vec<Cell> {
+    fn init_view_data(width: u32, height: u32) -> Vec<Cell> {
         let mut playfield: Vec<Cell> = vec![];
-
-        let max_column = width;
-        let top_row = 0;
-        let bottom_row = height;
-        for n in 0..max_column * bottom_row {
-            let row = n / max_column;
-            let column = n % max_column;
-
-            if (top_row..=top_row + 1).contains(&row) {
-                if (3..=8).contains(&column) {
-                    playfield.push(Cell::Empty);
-                } else {
-                    playfield.push(Cell::Wall);
-                }
-            } else if row == bottom_row - 1 {
-                playfield.push(Cell::Wall);
-            } else if (1..=max_column - 2).contains(&column) {
-                playfield.push(Cell::Empty);
-            } else {
-                playfield.push(Cell::Wall);
-            }
+        for _ in 0..width * height {
+            playfield.push(Cell::Wall);
         }
-
         playfield
     }
 
-    fn init2(width: u32, height: u32) -> Vec<Vec<Cell>> {
+    fn init_grid_data(width: u32, height: u32) -> Vec<Vec<Cell>> {
         let mut playfield: Vec<Vec<Cell>> = vec![];
 
         let max_column = width;
@@ -275,13 +296,13 @@ impl Playfield {
 
     pub fn new() -> Self {
         let width = 12;
-        let height = 20;
+        let height = 23;
 
         Self {
             width,
             height,
-            cells: Playfield::init(width, height),
-            cells2: Playfield::init2(width, height),
+            view_data: Playfield::init_view_data(width, height),
+            grid_data: Playfield::init_grid_data(width, height),
             current: Tetrimino::default(),
             next: Tetrimino::default(),
         }
@@ -295,16 +316,16 @@ impl Playfield {
         self.height
     }
 
-    pub fn cells(&self) -> *const Cell {
-        self.cells.as_ptr()
+    pub fn view_data_ptr(&self) -> *const Cell {
+        self.view_data.as_ptr()
     }
 
-    pub fn cells2(&mut self) -> *const Cell {
+    pub fn update_view_data(&mut self) {
         for y in 0..self.height - 1 {
             for x in 0..self.width - 1 {
                 let i = (y * self.width + x) as usize;
 
-                self.cells[i] = self.cells2[y as usize][x as usize];
+                self.view_data[i] = self.grid_data[y as usize][x as usize];
             }
         }
 
@@ -322,34 +343,52 @@ impl Playfield {
                 let point = Point::new(x as u32, y as u32) + position.clone();
                 let i = point.y * (self.width) + point.x;
 
-                self.cells[i as usize] = Cell::from(kind);
+                self.view_data[i as usize] = Cell::from(kind);
             }
         }
-
-        console_log!("{:?}", self.cells);
-
-        self.cells.as_ptr()
     }
 
     pub fn get_index(&self, row: u32, column: u32) -> usize {
         (row * self.width + column) as usize
     }
 
-    fn fetch_arround(&self) -> Vec<Cell> {
-        let current = self.current.position();
-        let x = current.clone().x();
-        let y = current.clone().y();
+    fn collide(&self) -> bool {
+        let current = self.current.position().clone();
+        let start_x = current.x() as usize;
+        let start_y = current.y() as usize;
 
-        let mut result: Vec<Cell> = vec![];
-        for row in y..3 {
-            for col in x..3 {
-                let idx = self.get_index(row, col);
-                let cell = self.cells[idx];
-                result.push(cell);
+        for x in 0..MINO_CELL_SIZE {
+            for y in 0..MINO_CELL_SIZE {
+                if self.current.blocks[y][x] == Cell::Empty {
+                    // テトリミノのブロックがない場合は無視する
+                    continue;
+                }
+
+                if self.grid_data[start_y + y + 1][start_x + x] != Cell::Empty {
+                    // テトリミノのブロックの1段下の座標とぶつかるデータがある場合は衝突したと見なす
+                    return true;
+                }
             }
         }
 
-        result
+        false
+    }
+
+    fn fix(&mut self) {
+        let current = self.current.position().clone();
+        let start_x = current.x() as usize;
+        let start_y = current.y() as usize;
+
+        for x in 0..MINO_CELL_SIZE {
+            for y in 0..MINO_CELL_SIZE {
+                if self.current.blocks[y][x] == Cell::Empty {
+                    // テトリミノのブロックがない場合は無視する
+                    continue;
+                }
+
+                self.grid_data[start_y + y][start_x + x] = self.current.blocks[y][x]
+            }
+        }
     }
 
     pub fn get_current(&self) -> Tetrimino {
@@ -365,7 +404,14 @@ impl Playfield {
     }
 
     pub fn update(&mut self) {
-        self.current.position.dropdown(1);
+        if self.collide() {
+            self.fix();
+            self.current = self.next.clone();
+            self.next = Tetrimino::default();
+        }
+
+        self.update_view_data();
+        self.current.dropdown(1);
     }
 }
 
@@ -394,8 +440,8 @@ impl GameIO {
         self.playfield.height()
     }
 
-    pub fn cells(&mut self) -> *const Cell {
-        self.playfield.cells2()
+    pub fn view_data_ptr(&mut self) -> *const Cell {
+        self.playfield.view_data_ptr()
     }
 
     pub fn get_index(&self, row: u32, column: u32) -> usize {
