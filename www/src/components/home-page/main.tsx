@@ -1,7 +1,6 @@
 import React from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import { NoSSR } from '../no-ssr';
 import { PlayfieldCanvas } from '../playfield-canvas';
 import styles from './main.module.scss';
 
@@ -17,9 +16,7 @@ export const HomePage: NextPage = () => {
       <header className={styles.header}>header</header>
 
       <main className={styles.main}>
-        <NoSSR>
-          <PlayfieldCanvas />
-        </NoSSR>
+        <PlayfieldCanvas />
       </main>
 
       <footer className={styles.footer}>footer</footer>
