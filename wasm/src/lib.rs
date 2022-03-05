@@ -240,9 +240,12 @@ impl ControlledTetrimino {
     }
 
     pub fn regenerate(&mut self, mino: Tetrimino) {
-        self.speed += 1;
         self.position = ControlledTetrimino::init_position();
         self.mino = mino;
+    }
+
+    pub fn accel(&mut self) {
+        self.speed += 1;
     }
 }
 
@@ -458,15 +461,68 @@ impl Playfield {
         self.is_pause = !self.is_pause;
     }
 
+    fn complete_lines(&mut self) {
+        let mut completed_lines: Vec<u32> = vec![];
+
+        // 下から4行以外は埋まらないので、その4行のみを対象にする
+        for y in 0..self.height - 1 {
+            let mut is_completed = true;
+            for x in 0..self.width - 1 {
+                let cell = self.grid_data[y as usize][x as usize];
+                if cell == Cell::Filler {
+                    continue;
+                }
+
+                if cell == Cell::Empty {
+                    is_completed = false;
+                    break;
+                }
+            }
+
+            if is_completed {
+                // 座標が必要なので、+1で補正する
+                completed_lines.push(y + 1);
+
+                // クリアしたライン分、速度を上げる
+                self.current.accel();
+            }
+        }
+
+        for line in completed_lines {
+            // 最下層の行から順番に処理する
+            // 一番上の行は処理する必要がないため、1からスタートする
+            for y in (1..line).rev() {
+                for x in 0..self.width - 1 {
+                    let y = y as usize;
+                    let x = x as usize;
+
+                    if self.grid_data[y][x] == Cell::Filler {
+                        continue;
+                    }
+
+                    if self.grid_data[y - 1][x] == Cell::Filler {
+                        // コピー元のセルが`Filler`の場合はコピーさせたくないので次にループする
+                        continue;
+                    }
+
+                    self.grid_data[y][x] = self.grid_data[y - 1][x];
+                    self.grid_data[y - 1][x] = Cell::Empty;
+                }
+            }
+        }
+    }
+
     pub fn update(&mut self) {
         if self.is_pause {
             return;
         }
+
         if self.current.position.y == 0 && self.is_collision() {
             self.is_gameover = true;
             return;
         }
 
+        self.complete_lines();
         self.dropdown(1, false);
         self.update_view_data();
     }
