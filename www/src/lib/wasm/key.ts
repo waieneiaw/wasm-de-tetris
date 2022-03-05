@@ -31,6 +31,7 @@ type State = {
   softDrop: KeyStateValue;
   hardDrop: KeyStateValue;
   togglePause: KeyStateValue;
+  anyKeys: KeyStateValue;
 };
 
 const _initialValue: State = {
@@ -65,6 +66,11 @@ const _initialValue: State = {
     holdBehavior: 'NEVER',
   },
   togglePause: {
+    frame: 0,
+    isInputed: false,
+    holdBehavior: 'NEVER',
+  },
+  anyKeys: {
     frame: 0,
     isInputed: false,
     holdBehavior: 'NEVER',
@@ -118,6 +124,13 @@ export const updateKeyState = (args: { game: GameIO }) => {
   _handleKeyInput('rotateRight', () => args.game.rotate_right());
   _handleKeyInput('hardDrop', () => args.game.hard_drop());
   _handleKeyInput('togglePause', () => args.game.toggle_pause());
+
+  if (args.game.is_startup()) {
+    _handleKeyInput('anyKeys', () => args.game.run());
+  }
+  // if (args.game.is_gameover()) {
+  //   _handleKeyInput('anyKeys', () => () => args.game.restart());
+  // }
 };
 
 export const handleKeyDown = (keyCode: string) => {
@@ -128,6 +141,8 @@ export const handleKeyDown = (keyCode: string) => {
   if (keyCode === 'KeyK') _keyState.rotateRight.isInputed = true;
   if (keyCode === 'Space') _keyState.hardDrop.isInputed = true;
   if (keyCode === 'Escape') _keyState.togglePause.isInputed = true;
+
+  _keyState.anyKeys.isInputed = true;
 };
 
 const clearKeyState = (key: keyof State) => {
@@ -143,4 +158,6 @@ export const handleKeyUp = (keyCode: string) => {
   if (keyCode === 'KeyK') clearKeyState('rotateRight');
   if (keyCode === 'Space') clearKeyState('hardDrop');
   if (keyCode === 'Escape') clearKeyState('togglePause');
+
+  clearKeyState('anyKeys');
 };

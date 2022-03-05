@@ -124,6 +124,28 @@ const drawCells = (args: {
   }
 };
 
+const drawStartup = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
+  if (!args.game.is_startup()) {
+    return;
+  }
+
+  args.ctx.beginPath();
+  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+  args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0] + ')';
+  args.ctx.fillRect(0, 0, 400, 400);
+
+  const fontSize = FONT.SMALL_SIZE;
+
+  const x1 = CANVAS.WIDTH / 2 - (fontSize * 3) / 2;
+  const x2 = CANVAS.WIDTH / 2 - (fontSize * 7) / 2;
+  const y = CANVAS.HEIGHT / 2;
+
+  args.ctx.font = FONT.STYLE(fontSize);
+  args.ctx.fillStyle = '#FFFFFF';
+  args.ctx.fillText('HIT', x1, y);
+  args.ctx.fillText('ANY KEY', x2, y + 40);
+};
+
 const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
   if (!args.game.is_pause()) {
     return;
@@ -134,10 +156,12 @@ const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
   args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0.5] + ')';
   args.ctx.fillRect(0, 0, 400, 400);
 
-  const x = CANVAS.WIDTH / 2 - (FONT.SIZE * 5) / 2;
+  const fontSize = FONT.SIZE;
+
+  const x = CANVAS.WIDTH / 2 - (fontSize * 5) / 2;
   const y = CANVAS.HEIGHT / 2;
 
-  args.ctx.font = FONT.STYLE;
+  args.ctx.font = FONT.STYLE(fontSize);
   args.ctx.strokeText('PAUSE', x, y);
 };
 
@@ -149,10 +173,12 @@ const drawGameOver = (args: {
     return;
   }
 
-  const x = CANVAS.WIDTH / 2 - (FONT.SIZE * 4) / 2;
+  const fontSize = FONT.SIZE;
+
+  const x = CANVAS.WIDTH / 2 - (fontSize * 4) / 2;
   const y = CANVAS.HEIGHT / 2;
 
-  args.ctx.font = FONT.STYLE;
+  args.ctx.font = FONT.STYLE(fontSize);
   args.ctx.fillStyle = '#FFFFFF';
   args.ctx.fillText('GAME', x, y);
   args.ctx.fillText('OVER', x, y + 40);
@@ -169,6 +195,7 @@ export const renderLoop = (args: {
 
   drawGrid({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
   drawCells({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
+  drawStartup({ game: args.game, ctx: args.ctxFontLayer });
   drawPause({ game: args.game, ctx: args.ctxFontLayer });
   drawGameOver({ game: args.game, ctx: args.ctxFontLayer });
 };

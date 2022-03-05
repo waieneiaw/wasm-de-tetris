@@ -24,7 +24,7 @@ macro_rules! console_log {
 
 #[wasm_bindgen]
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Cell {
     Empty,
     Filler,
@@ -51,7 +51,7 @@ impl From<TetriminoKind> for Cell {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TetriminoKind {
     I,
     J,
@@ -86,14 +86,14 @@ impl From<u32> for TetriminoKind {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TetriminoState {
     Prepare,
     Falling,
     Stopped,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Point {
     x: u32,
     y: u32,
@@ -129,7 +129,7 @@ impl Point {
 }
 
 /// https://en.wikipedia.org/wiki/Tetrimino
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tetrimino {
     kind: TetriminoKind,
     blocks: MinoData,
@@ -178,6 +178,7 @@ impl Tetrimino {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct ControlledTetrimino {
     mino: Tetrimino,
     position: Point,
@@ -249,6 +250,14 @@ impl ControlledTetrimino {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+enum PlayfieldState {
+    Startup,
+    Running,
+    Pause,
+    Gameover,
+}
+
 struct Playfield {
     width: u32,
     height: u32,
@@ -256,8 +265,7 @@ struct Playfield {
     grid_data: Vec<Vec<Cell>>,
     current: ControlledTetrimino,
     next: Tetrimino,
-    is_pause: bool,
-    is_gameover: bool,
+    state: PlayfieldState,
 }
 
 impl Playfield {
@@ -312,9 +320,12 @@ impl Playfield {
             grid_data: Playfield::init_grid_data(width, height),
             current: ControlledTetrimino::new(Tetrimino::default()),
             next: Tetrimino::default(),
-            is_pause: false,
-            is_gameover: false,
+            state: PlayfieldState::Startup,
         }
+    }
+
+    pub fn run(&mut self) {
+        self.state = PlayfieldState::Running;
     }
 
     pub fn width(&self) -> u32 {
@@ -453,12 +464,11 @@ impl Playfield {
     }
 
     pub fn toggle_pause(&mut self) {
-        if self.is_gameover {
-            self.is_pause = false;
-            return;
+        match self.state {
+            PlayfieldState::Pause => self.state = PlayfieldState::Running,
+            PlayfieldState::Running => self.state = PlayfieldState::Pause,
+            _ => {}
         }
-
-        self.is_pause = !self.is_pause;
     }
 
     fn complete_lines(&mut self) {
@@ -513,18 +523,46 @@ impl Playfield {
     }
 
     pub fn update(&mut self) {
-        if self.is_pause {
+        if self.state != PlayfieldState::Running {
             return;
         }
 
         if self.current.position.y == 0 && self.is_collision() {
-            self.is_gameover = true;
+            self.state = PlayfieldState::Gameover;
             return;
         }
 
         self.complete_lines();
         self.dropdown(1, false);
         self.update_view_data();
+    }
+
+    pub fn is_gameover(&self) -> bool {
+        self.state == PlayfieldState::Gameover
+    }
+
+    pub fn is_pause(&self) -> bool {
+        self.state == PlayfieldState::Pause
+    }
+
+    pub fn is_startup(&self) -> bool {
+        self.state == PlayfieldState::Startup
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.state == PlayfieldState::Running
+    }
+
+    pub fn restart(&mut self) {
+        *self = Self {
+            width: self.width,
+            height: self.height,
+            view_data: Playfield::init_view_data(self.width, self.height),
+            grid_data: Playfield::init_grid_data(self.width, self.height),
+            current: ControlledTetrimino::new(Tetrimino::default()),
+            next: Tetrimino::default(),
+            state: PlayfieldState::Running,
+        }
     }
 }
 
@@ -566,16 +604,32 @@ impl GameIO {
         self.playfield.get_view_data_index(row, column)
     }
 
+    pub fn run(&mut self) {
+        self.playfield.run();
+    }
+
+    pub fn restart(&mut self) {
+        self.playfield.restart();
+    }
+
     pub fn update(&mut self) {
         self.playfield.update();
     }
 
     pub fn is_gameover(&self) -> bool {
-        self.playfield.is_gameover
+        self.playfield.is_gameover()
     }
 
     pub fn is_pause(&self) -> bool {
-        self.playfield.is_pause
+        self.playfield.is_pause()
+    }
+
+    pub fn is_startup(&self) -> bool {
+        self.playfield.is_startup()
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.playfield.is_running()
     }
 
     pub fn toggle_pause(&mut self) {

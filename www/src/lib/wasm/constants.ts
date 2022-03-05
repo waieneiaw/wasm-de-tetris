@@ -4,8 +4,9 @@ export const CANVAS = {
 } as const;
 
 export const FONT = {
+  SMALL_SIZE: 18,
   SIZE: 36,
-  STYLE: '36px "Press Start 2p"',
+  STYLE: (size: number) => `${size}px "Press Start 2p"`,
 } as const;
 
 export const FPS = 1000 / 60;
