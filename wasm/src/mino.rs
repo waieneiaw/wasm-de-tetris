@@ -15,8 +15,8 @@ pub const EMPTY_MINO: Mino = [
 
 #[rustfmt::skip]
 pub const I_MINO: Mino = [
-    [Cell::I,     Cell::I,     Cell::I,     Cell::I    ],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+    [Cell::I,     Cell::I,     Cell::I,     Cell::I    ],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];
