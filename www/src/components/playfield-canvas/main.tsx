@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  CANVAS,
   withGameIO,
   renderLoop,
   FPS,
@@ -8,25 +9,48 @@ import {
 } from '~app/lib/wasm';
 import styles from './main.module.scss';
 
+const _LAYER_ID = {
+  MAIN: '___canvas_main',
+  FONT: '___canvas_font',
+} as const;
+
 export const PlayfieldCanvas = () => {
   React.useEffect(() => {
     if (!document) {
       return;
     }
 
-    const _canvas = document.getElementById('___canvas') as HTMLCanvasElement;
-    if (!_canvas) {
+    const mainLayer = document.getElementById(
+      _LAYER_ID.MAIN,
+    ) as HTMLCanvasElement;
+    if (!mainLayer) {
       return;
     }
 
-    const _ctx = _canvas.getContext('2d');
-    if (!_ctx) {
+    const ctxMainLayer = mainLayer.getContext('2d');
+    if (!ctxMainLayer) {
+      return;
+    }
+
+    const fontLayer = document.getElementById(
+      _LAYER_ID.FONT,
+    ) as HTMLCanvasElement;
+    if (!fontLayer) {
+      return;
+    }
+
+    const ctxFontLayer = mainLayer.getContext('2d');
+    if (!ctxFontLayer) {
       return;
     }
 
     const render = () => {
       withGameIO((game) => {
-        renderLoop({ ctx: _ctx, game });
+        renderLoop({
+          game,
+          ctxMainLayer,
+          ctxFontLayer,
+        });
       });
     };
 
@@ -56,6 +80,21 @@ export const PlayfieldCanvas = () => {
   }, []);
 
   return (
-    <canvas id="___canvas" className={styles.canvas} width={205} height={393} />
+    <div className={styles.root}>
+      <canvas
+        id={_LAYER_ID.MAIN}
+        className={styles.canvas}
+        width={CANVAS.WIDTH}
+        height={CANVAS.HEIGHT}
+        data-main-layer
+      />
+      <canvas
+        id={_LAYER_ID.FONT}
+        className={styles.canvas}
+        width={CANVAS.WIDTH}
+        height={CANVAS.HEIGHT}
+        data-font-layer
+      />
+    </div>
   );
 };

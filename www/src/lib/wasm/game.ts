@@ -1,9 +1,11 @@
 import { GameIO, Cell } from '~app/@wasm/wasm';
 import { memory } from '~app/@wasm/wasm_bg.wasm';
+import { CANVAS, FONT } from './constants';
 import { updateKeyState } from './key';
 
 const CELL_SIZE = 16; // px
-const GRID_COLOR = '#CCCCCC';
+const GRID_COLOR = '#cccccc';
+const EMPTY_COLOR = '#dddddd';
 const FILLER_COLOR = '#000000';
 
 const getIndex = (game: GameIO, row: number, col: number) =>
@@ -61,7 +63,7 @@ const drawCells = (args: {
       if (isGameover) {
         switch (cells[idx]) {
           case Cell.Empty: {
-            args.ctx.fillStyle = GRID_COLOR;
+            args.ctx.fillStyle = EMPTY_COLOR;
             break;
           }
           default: {
@@ -104,7 +106,7 @@ const drawCells = (args: {
             break;
           }
           default: {
-            args.ctx.fillStyle = GRID_COLOR;
+            args.ctx.fillStyle = EMPTY_COLOR;
             break;
           }
         }
@@ -122,16 +124,51 @@ const drawCells = (args: {
   }
 };
 
-export const FPS = 1000 / 60;
+const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
+  if (!args.game.is_pause()) {
+    return;
+  }
 
-export const renderLoop = (args: {
+  args.ctx.beginPath();
+  // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+  args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0.5] + ')';
+  args.ctx.fillRect(0, 0, 400, 400);
+
+  const x = CANVAS.WIDTH / 2 - (FONT.SIZE * 5) / 2;
+  const y = CANVAS.HEIGHT / 2;
+
+  args.ctx.font = FONT.STYLE;
+  args.ctx.strokeText('PAUSE', x, y);
+};
+
+const drawGameOver = (args: {
   ctx: CanvasRenderingContext2D;
   game: GameIO;
+}) => {
+  if (!args.game.is_gameover()) {
+    return;
+  }
+
+  const x = CANVAS.WIDTH / 2 - (FONT.SIZE * 4) / 2;
+  const y = CANVAS.HEIGHT / 2;
+
+  args.ctx.font = FONT.STYLE;
+  args.ctx.fillStyle = '#FFFFFF';
+  args.ctx.fillText('GAME', x, y);
+  args.ctx.fillText('OVER', x, y + 40);
+};
+
+export const renderLoop = (args: {
+  game: GameIO;
+  ctxMainLayer: CanvasRenderingContext2D;
+  ctxFontLayer: CanvasRenderingContext2D;
 }) => {
   updateKeyState({ game: args.game });
 
   args.game.update();
 
-  drawGrid({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
-  drawCells({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
+  drawGrid({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
+  drawCells({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
+  drawPause({ game: args.game, ctx: args.ctxFontLayer });
+  drawGameOver({ game: args.game, ctx: args.ctxFontLayer });
 };
