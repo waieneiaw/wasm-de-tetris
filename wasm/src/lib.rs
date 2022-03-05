@@ -60,12 +60,6 @@ pub enum TetriminoKind {
     S,
     T,
     Z,
-    // Water,
-    // Yellow,
-    // Green,
-    // Red,
-    // Orange,
-    // Purple
 }
 
 impl From<u32> for TetriminoKind {
@@ -145,7 +139,7 @@ pub struct Tetrimino {
 
 impl Default for Tetrimino {
     fn default() -> Self {
-        let kind = Self::rand();
+        let kind = Self::init_kind();
 
         Self {
             kind,
@@ -163,9 +157,9 @@ impl Default for Tetrimino {
 }
 
 impl Tetrimino {
-    fn rand() -> TetriminoKind {
+    fn init_kind() -> TetriminoKind {
         use rand::Rng;
-        // let kind = rand::thread_rng().gen_range(0..6) as u32; // rand v0.8
+        // // let kind = rand::thread_rng().gen_range(0..6) as u32; // rand v0.8
         let kind = rand::thread_rng().gen_range(0, 6) as u32;
 
         TetriminoKind::from(kind)
@@ -200,18 +194,6 @@ impl Tetrimino {
 
         self.blocks = new_blocks;
     }
-
-    // pub fn move_left(&mut self) {
-    //     self.position.sub_x(1);
-    // }
-
-    // pub fn move_right(&mut self) {
-    //     self.position.add_x(1);
-    // }
-
-    // pub fn dropdown(&mut self, line: u32) {
-    //     self.position.add_y(line);
-    // }
 }
 
 struct ControlledTetrimino {
@@ -381,7 +363,7 @@ impl Playfield {
         (row * self.width + column) as usize
     }
 
-    fn collide(&self) -> bool {
+    fn is_collision(&self) -> bool {
         let current = self.current.position.clone();
         let start_x = current.x() as usize;
         let start_y = current.y() as usize;
@@ -393,8 +375,7 @@ impl Playfield {
                     continue;
                 }
 
-                if self.grid_data[start_y + y + 1][start_x + x] != Cell::Empty {
-                    // テトリミノのブロックの1段下の座標とぶつかるデータがある場合は衝突したと見なす
+                if self.grid_data[start_y + y][start_x + x] != Cell::Empty {
                     return true;
                 }
             }
@@ -422,12 +403,22 @@ impl Playfield {
 
     #[allow(dead_code)]
     pub fn move_left(&mut self) {
+        let prev = self.current.position.clone();
+
         self.current.move_left();
+        if self.is_collision() {
+            self.current.position = prev;
+        }
     }
 
     #[allow(dead_code)]
     pub fn move_right(&mut self) {
+        let prev = self.current.position.clone();
+
         self.current.move_right();
+        if self.is_collision() {
+            self.current.position = prev;
+        }
     }
 
     #[allow(dead_code)]
@@ -442,24 +433,40 @@ impl Playfield {
 
     #[allow(dead_code)]
     pub fn rotate_left(&mut self) {
-        self.current.rotate_left()
+        let prev = self.current.mino.clone();
+        self.current.rotate_left();
+
+        if self.is_collision() {
+            self.current.mino = prev;
+        }
     }
 
     #[allow(dead_code)]
     pub fn rotate_right(&mut self) {
-        self.current.rotate_right()
+        let prev = self.current.mino.clone();
+        self.current.rotate_right();
+
+        if self.is_collision() {
+            self.current.mino = prev;
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn update(&mut self) {
-        if self.collide() {
+    fn dropdown(&mut self) {
+        let prev = self.current.position.clone();
+        self.current.dropdown(1);
+
+        if self.is_collision() {
+            self.current.position = prev;
             self.fix();
             self.current.regenerate(self.next.clone());
             self.next = Tetrimino::default();
         }
+    }
 
+    #[allow(dead_code)]
+    pub fn update(&mut self) {
+        self.dropdown();
         self.update_view_data();
-        self.current.dropdown(1);
     }
 }
 
