@@ -8,7 +8,6 @@ const ALIVE_COLOR = '#000000';
 
 const getIndex = (game: GameIO, row: number, col: number) =>
   game.get_index(row, col);
-const getCurrent = (game: GameIO) => game.get_current();
 
 const drawGrid = (args: {
   game: GameIO;
@@ -119,15 +118,28 @@ export const renderLoop = (args: {
 
   drawGrid({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
   drawCells({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
-  // drawTetrimino({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
-
-  // requestAnimationFrame(() => renderLoop({ ctx: args.ctx }));
 };
 
 export const pressLeft = (args: { game: GameIO }) => {
-  args.game.rotate_left();
+  args.game.move_left();
 };
 
 export const pressRight = (args: { game: GameIO }) => {
+  args.game.move_right();
+};
+
+export const pressSoftDrop = (args: { game: GameIO }) => {
+  args.game.soft_drop();
+};
+
+export const pressHardDrop = (args: { game: GameIO }) => {
+  args.game.hard_drop();
+};
+
+export const pressRotateLeft = (args: { game: GameIO }) => {
+  args.game.rotate_left();
+};
+
+export const pressRotateRight = (args: { game: GameIO }) => {
   args.game.rotate_right();
 };

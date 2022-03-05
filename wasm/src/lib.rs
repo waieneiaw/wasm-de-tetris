@@ -122,8 +122,16 @@ impl Point {
         self.y
     }
 
-    pub fn dropdown(&mut self, line: u32) {
-        self.y += line;
+    pub fn add_x(&mut self, x: u32) {
+        self.x += x;
+    }
+
+    pub fn sub_x(&mut self, x: u32) {
+        self.x -= x;
+    }
+
+    pub fn add_y(&mut self, y: u32) {
+        self.y += y;
     }
 }
 
@@ -132,7 +140,6 @@ impl Point {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tetrimino {
     kind: TetriminoKind,
-    position: Point,
     blocks: mino::Mino,
 }
 
@@ -142,7 +149,6 @@ impl Default for Tetrimino {
 
         Self {
             kind,
-            position: Point::new(4, 0),
             blocks: match kind {
                 TetriminoKind::I => I_MINO,
                 TetriminoKind::J => J_MINO,
@@ -167,10 +173,6 @@ impl Tetrimino {
 
     pub fn kind(&self) -> &TetriminoKind {
         &self.kind
-    }
-
-    pub fn position(&self) -> &Point {
-        &self.position
     }
 
     pub fn blocks(&self) -> &mino::Mino {
@@ -199,13 +201,22 @@ impl Tetrimino {
         self.blocks = new_blocks;
     }
 
-    pub fn dropdown(&mut self, line: u32) {
-        self.position.dropdown(line);
-    }
+    // pub fn move_left(&mut self) {
+    //     self.position.sub_x(1);
+    // }
+
+    // pub fn move_right(&mut self) {
+    //     self.position.add_x(1);
+    // }
+
+    // pub fn dropdown(&mut self, line: u32) {
+    //     self.position.add_y(line);
+    // }
 }
 
 struct ControlledTetrimino {
     mino: Tetrimino,
+    position: Point,
     speed: usize,
     drop_counter: usize,
     last_dropped: usize,
@@ -213,9 +224,14 @@ struct ControlledTetrimino {
 }
 
 impl ControlledTetrimino {
-    fn new(mino: Tetrimino) -> Self {
+    fn init_position() -> Point {
+        Point::new(4, 0)
+    }
+
+    pub fn new(mino: Tetrimino) -> Self {
         Self {
             mino,
+            position: ControlledTetrimino::init_position(),
             speed: 1,
             drop_counter: 0,
             last_dropped: 0,
@@ -231,6 +247,14 @@ impl ControlledTetrimino {
         self.mino.rotate_right();
     }
 
+    pub fn move_left(&mut self) {
+        self.position.sub_x(1);
+    }
+
+    pub fn move_right(&mut self) {
+        self.position.add_x(1);
+    }
+
     pub fn dropdown(&mut self, line: u32) {
         self.drop_counter += self.speed;
         if self.drop_counter < self.last_dropped {
@@ -238,9 +262,14 @@ impl ControlledTetrimino {
         }
 
         self.last_dropped += self.threshold;
-        self.speed += 1;
 
-        self.mino.dropdown(line);
+        self.position.add_y(line);
+    }
+
+    pub fn regenerate(&mut self, mino: Tetrimino) {
+        self.speed += 1;
+        self.position = ControlledTetrimino::init_position();
+        self.mino = mino;
     }
 }
 
@@ -249,7 +278,7 @@ struct Playfield {
     height: u32,
     view_data: Vec<Cell>,
     grid_data: Vec<Vec<Cell>>,
-    current: Tetrimino,
+    current: ControlledTetrimino,
     next: Tetrimino,
 }
 
@@ -303,7 +332,7 @@ impl Playfield {
             height,
             view_data: Playfield::init_view_data(width, height),
             grid_data: Playfield::init_grid_data(width, height),
-            current: Tetrimino::default(),
+            current: ControlledTetrimino::new(Tetrimino::default()),
             next: Tetrimino::default(),
         }
     }
@@ -329,9 +358,9 @@ impl Playfield {
             }
         }
 
-        let position = self.current.position().clone();
-        let blocks = self.current.blocks();
-        let kind = self.current.kind().to_owned();
+        let position = self.current.position.clone();
+        let blocks = self.current.mino.blocks;
+        let kind = self.current.mino.kind.to_owned();
 
         for (y, rows) in blocks.iter().enumerate() {
             for (x, _) in rows.iter().enumerate() {
@@ -348,18 +377,18 @@ impl Playfield {
         }
     }
 
-    pub fn get_index(&self, row: u32, column: u32) -> usize {
+    pub fn get_view_data_index(&self, row: u32, column: u32) -> usize {
         (row * self.width + column) as usize
     }
 
     fn collide(&self) -> bool {
-        let current = self.current.position().clone();
+        let current = self.current.position.clone();
         let start_x = current.x() as usize;
         let start_y = current.y() as usize;
 
         for x in 0..MINO_CELL_SIZE {
             for y in 0..MINO_CELL_SIZE {
-                if self.current.blocks[y][x] == Cell::Empty {
+                if self.current.mino.blocks[y][x] == Cell::Empty {
                     // テトリミノのブロックがない場合は無視する
                     continue;
                 }
@@ -375,38 +404,57 @@ impl Playfield {
     }
 
     fn fix(&mut self) {
-        let current = self.current.position().clone();
-        let start_x = current.x() as usize;
-        let start_y = current.y() as usize;
+        let current = self.current.position.clone();
+        let start_x = current.x as usize;
+        let start_y = current.y as usize;
 
         for x in 0..MINO_CELL_SIZE {
             for y in 0..MINO_CELL_SIZE {
-                if self.current.blocks[y][x] == Cell::Empty {
+                if self.current.mino.blocks[y][x] == Cell::Empty {
                     // テトリミノのブロックがない場合は無視する
                     continue;
                 }
 
-                self.grid_data[start_y + y][start_x + x] = self.current.blocks[y][x]
+                self.grid_data[start_y + y][start_x + x] = self.current.mino.blocks[y][x]
             }
         }
     }
 
-    pub fn get_current(&self) -> Tetrimino {
-        self.current.clone()
+    #[allow(dead_code)]
+    pub fn move_left(&mut self) {
+        self.current.move_left();
     }
 
+    #[allow(dead_code)]
+    pub fn move_right(&mut self) {
+        self.current.move_right();
+    }
+
+    #[allow(dead_code)]
+    pub fn soft_drop(&mut self) {
+        console_log!("soft_drop");
+    }
+
+    #[allow(dead_code)]
+    pub fn hard_drop(&mut self) {
+        console_log!("hard_drop");
+    }
+
+    #[allow(dead_code)]
     pub fn rotate_left(&mut self) {
         self.current.rotate_left()
     }
 
+    #[allow(dead_code)]
     pub fn rotate_right(&mut self) {
         self.current.rotate_right()
     }
 
+    #[allow(dead_code)]
     pub fn update(&mut self) {
         if self.collide() {
             self.fix();
-            self.current = self.next.clone();
+            self.current.regenerate(self.next.clone());
             self.next = Tetrimino::default();
         }
 
@@ -445,15 +493,27 @@ impl GameIO {
     }
 
     pub fn get_index(&self, row: u32, column: u32) -> usize {
-        self.playfield.get_index(row, column)
-    }
-
-    pub fn get_current(&self) -> Tetrimino {
-        self.playfield.get_current()
+        self.playfield.get_view_data_index(row, column)
     }
 
     pub fn update(&mut self) {
         self.playfield.update();
+    }
+
+    pub fn move_left(&mut self) {
+        self.playfield.move_left();
+    }
+
+    pub fn move_right(&mut self) {
+        self.playfield.move_right();
+    }
+
+    pub fn soft_drop(&mut self) {
+        console_log!("soft_drop");
+    }
+
+    pub fn hard_drop(&mut self) {
+        console_log!("hard_drop");
     }
 
     pub fn rotate_left(&mut self) {

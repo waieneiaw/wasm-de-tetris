@@ -5,6 +5,10 @@ import {
   FPS,
   pressLeft,
   pressRight,
+  pressSoftDrop,
+  pressRotateLeft,
+  pressRotateRight,
+  pressHardDrop,
 } from '~app/lib/wasm';
 import styles from './main.module.scss';
 
@@ -14,12 +18,6 @@ export const PlayfieldCanvas = () => {
       return;
     }
 
-    const _wrapper = document.getElementById(
-      '___canvasWrapper',
-    ) as HTMLDivElement;
-    if (!_wrapper) {
-      return;
-    }
     const _canvas = document.getElementById('___canvas') as HTMLCanvasElement;
     if (!_canvas) {
       return;
@@ -30,23 +28,13 @@ export const PlayfieldCanvas = () => {
       return;
     }
 
-    // const resize = () => {
-    //   _canvas.width = _wrapper.clientWidth;
-    //   _canvas.height = _wrapper.clientHeight;
-    // };
-
     const render = () => {
-      // resize();
       withGameIO((game) => {
         renderLoop({ ctx: _ctx, game });
       });
     };
 
     setInterval(render, FPS);
-
-    // return () => {
-    //   cancelAnimationFrame()
-    // }
   }, []);
 
   React.useEffect(() => {
@@ -56,8 +44,12 @@ export const PlayfieldCanvas = () => {
 
     const keydown = (ev: KeyboardEvent) => {
       withGameIO((game) => {
-        if (ev.code === 'ArrowLeft') pressLeft({ game });
-        if (ev.code === 'ArrowRight') pressRight({ game });
+        if (ev.code === 'KeyA') pressLeft({ game });
+        if (ev.code === 'KeyD') pressRight({ game });
+        if (ev.code === 'KeyS') pressSoftDrop({ game });
+        if (ev.code === 'KeyJ') pressRotateLeft({ game });
+        if (ev.code === 'KeyK') pressRotateRight({ game });
+        if (ev.code === 'Space') pressHardDrop({ game });
       });
     };
 
@@ -69,13 +61,6 @@ export const PlayfieldCanvas = () => {
   }, []);
 
   return (
-    <div id="___canvasWrapper" className={styles.wrapper}>
-      <canvas
-        id="___canvas"
-        className={styles.canvas}
-        width={205}
-        height={800}
-      />
-    </div>
+    <canvas id="___canvas" className={styles.canvas} width={205} height={393} />
   );
 };
