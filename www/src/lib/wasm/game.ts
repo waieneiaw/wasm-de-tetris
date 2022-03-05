@@ -1,10 +1,10 @@
 import { GameIO, Cell } from '~app/@wasm/wasm';
 import { memory } from '~app/@wasm/wasm_bg.wasm';
+import { updateKeyState } from './key';
 
 const CELL_SIZE = 16; // px
 const GRID_COLOR = '#CCCCCC';
-const DEAD_COLOR = '#FFFFFF';
-const ALIVE_COLOR = '#000000';
+const FILLER_COLOR = '#000000';
 
 const getIndex = (game: GameIO, row: number, col: number) =>
   game.get_index(row, col);
@@ -49,6 +49,7 @@ const drawCells = (args: {
   const cellsPtr = args.game.view_data_ptr();
   const width = args.game.width();
   const height = args.game.height();
+  const isGameover = args.game.is_gameover();
 
   const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
 
@@ -57,42 +58,55 @@ const drawCells = (args: {
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const idx = getIndex(args.game, row, col);
-      switch (cells[idx]) {
-        case Cell.Wall: {
-          args.ctx.fillStyle = ALIVE_COLOR;
-          break;
+      if (isGameover) {
+        switch (cells[idx]) {
+          case Cell.Empty: {
+            args.ctx.fillStyle = GRID_COLOR;
+            break;
+          }
+          default: {
+            args.ctx.fillStyle = FILLER_COLOR;
+            break;
+          }
         }
-        case Cell.I: {
-          args.ctx.fillStyle = '#00F0F0';
-          break;
-        }
-        case Cell.J: {
-          args.ctx.fillStyle = '#0000FF';
-          break;
-        }
-        case Cell.L: {
-          args.ctx.fillStyle = '#FF8800';
-          break;
-        }
-        case Cell.O: {
-          args.ctx.fillStyle = '#FFFF00';
-          break;
-        }
-        case Cell.S: {
-          args.ctx.fillStyle = '#88FF00';
-          break;
-        }
-        case Cell.T: {
-          args.ctx.fillStyle = '#FF00FF';
-          break;
-        }
-        case Cell.Z: {
-          args.ctx.fillStyle = '#FF0000';
-          break;
-        }
-        default: {
-          args.ctx.fillStyle = GRID_COLOR;
-          break;
+      } else {
+        switch (cells[idx]) {
+          case Cell.Filler: {
+            args.ctx.fillStyle = FILLER_COLOR;
+            break;
+          }
+          case Cell.IMino: {
+            args.ctx.fillStyle = '#00F0F0';
+            break;
+          }
+          case Cell.JMino: {
+            args.ctx.fillStyle = '#0000FF';
+            break;
+          }
+          case Cell.LMino: {
+            args.ctx.fillStyle = '#FF8800';
+            break;
+          }
+          case Cell.OMino: {
+            args.ctx.fillStyle = '#FFFF00';
+            break;
+          }
+          case Cell.SMino: {
+            args.ctx.fillStyle = '#88FF00';
+            break;
+          }
+          case Cell.TMino: {
+            args.ctx.fillStyle = '#FF00FF';
+            break;
+          }
+          case Cell.ZMino: {
+            args.ctx.fillStyle = '#FF0000';
+            break;
+          }
+          default: {
+            args.ctx.fillStyle = GRID_COLOR;
+            break;
+          }
         }
       }
 
@@ -114,32 +128,10 @@ export const renderLoop = (args: {
   ctx: CanvasRenderingContext2D;
   game: GameIO;
 }) => {
+  updateKeyState({ game: args.game });
+
   args.game.update();
 
   drawGrid({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
   drawCells({ game: args.game, ctx: args.ctx, cellSize: CELL_SIZE });
-};
-
-export const pressLeft = (args: { game: GameIO }) => {
-  args.game.move_left();
-};
-
-export const pressRight = (args: { game: GameIO }) => {
-  args.game.move_right();
-};
-
-export const pressSoftDrop = (args: { game: GameIO }) => {
-  args.game.soft_drop();
-};
-
-export const pressHardDrop = (args: { game: GameIO }) => {
-  args.game.hard_drop();
-};
-
-export const pressRotateLeft = (args: { game: GameIO }) => {
-  args.game.rotate_left();
-};
-
-export const pressRotateRight = (args: { game: GameIO }) => {
-  args.game.rotate_right();
 };

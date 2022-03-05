@@ -1,7 +1,7 @@
 mod mino;
 mod utils;
 
-use mino::{Mino, I_MINO, J_MINO, L_MINO, MINO_CELL_SIZE, O_MINO, S_MINO, T_MINO, Z_MINO};
+use mino::{MinoData, I_MINO, J_MINO, L_MINO, MINO_CELL_SIZE, O_MINO, S_MINO, T_MINO, Z_MINO};
 use wasm_bindgen::prelude::*;
 
 use crate::mino::EMPTY_MINO;
@@ -27,31 +27,31 @@ macro_rules! console_log {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {
     Empty,
-    Wall,
-    I,
-    J,
-    L,
-    O,
-    S,
-    T,
-    Z,
+    Filler,
+    IMino,
+    JMino,
+    LMino,
+    OMino,
+    SMino,
+    TMino,
+    ZMino,
 }
 
 impl From<TetriminoKind> for Cell {
     fn from(value: TetriminoKind) -> Self {
         match value {
-            TetriminoKind::I => Cell::I,
-            TetriminoKind::J => Cell::J,
-            TetriminoKind::L => Cell::L,
-            TetriminoKind::O => Cell::O,
-            TetriminoKind::S => Cell::S,
-            TetriminoKind::T => Cell::T,
-            TetriminoKind::Z => Cell::Z,
+            TetriminoKind::I => Cell::IMino,
+            TetriminoKind::J => Cell::JMino,
+            TetriminoKind::L => Cell::LMino,
+            TetriminoKind::O => Cell::OMino,
+            TetriminoKind::S => Cell::SMino,
+            TetriminoKind::T => Cell::TMino,
+            TetriminoKind::Z => Cell::ZMino,
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TetriminoKind {
     I,
     J,
@@ -60,6 +60,16 @@ pub enum TetriminoKind {
     S,
     T,
     Z,
+}
+
+impl Default for TetriminoKind {
+    fn default() -> Self {
+        use rand::Rng;
+        // // let kind = rand::thread_rng().gen_range(0..6) as u32; // rand v0.8
+        let kind = rand::thread_rng().gen_range(0, 6) as u32;
+
+        TetriminoKind::from(kind)
+    }
 }
 
 impl From<u32> for TetriminoKind {
@@ -83,17 +93,10 @@ pub enum TetriminoState {
     Stopped,
 }
 
-#[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Point {
     x: u32,
     y: u32,
-}
-
-impl Point {
-    pub fn new(x: u32, y: u32) -> Self {
-        Self { x, y }
-    }
 }
 
 impl std::ops::Add for Point {
@@ -108,12 +111,8 @@ impl std::ops::Add for Point {
 }
 
 impl Point {
-    pub fn x(&self) -> u32 {
-        self.x
-    }
-
-    pub fn y(&self) -> u32 {
-        self.y
+    pub fn new(x: u32, y: u32) -> Self {
+        Self { x, y }
     }
 
     pub fn add_x(&mut self, x: u32) {
@@ -129,17 +128,16 @@ impl Point {
     }
 }
 
-#[wasm_bindgen]
 /// https://en.wikipedia.org/wiki/Tetrimino
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Tetrimino {
     kind: TetriminoKind,
-    blocks: mino::Mino,
+    blocks: MinoData,
 }
 
 impl Default for Tetrimino {
     fn default() -> Self {
-        let kind = Self::init_kind();
+        let kind = TetriminoKind::default();
 
         Self {
             kind,
@@ -157,22 +155,6 @@ impl Default for Tetrimino {
 }
 
 impl Tetrimino {
-    fn init_kind() -> TetriminoKind {
-        use rand::Rng;
-        // // let kind = rand::thread_rng().gen_range(0..6) as u32; // rand v0.8
-        let kind = rand::thread_rng().gen_range(0, 6) as u32;
-
-        TetriminoKind::from(kind)
-    }
-
-    pub fn kind(&self) -> &TetriminoKind {
-        &self.kind
-    }
-
-    pub fn blocks(&self) -> &mino::Mino {
-        &self.blocks
-    }
-
     pub fn rotate_left(&mut self) {
         let mut new_blocks = EMPTY_MINO;
         for (y, rows) in self.blocks.iter().enumerate() {
@@ -200,7 +182,7 @@ struct ControlledTetrimino {
     mino: Tetrimino,
     position: Point,
     speed: usize,
-    drop_counter: usize,
+    frame: usize,
     last_dropped: usize,
     threshold: usize,
 }
@@ -215,7 +197,7 @@ impl ControlledTetrimino {
             mino,
             position: ControlledTetrimino::init_position(),
             speed: 1,
-            drop_counter: 0,
+            frame: 0,
             last_dropped: 0,
             threshold: 100,
         }
@@ -237,15 +219,24 @@ impl ControlledTetrimino {
         self.position.add_x(1);
     }
 
-    pub fn dropdown(&mut self, line: u32) {
-        self.drop_counter += self.speed;
-        if self.drop_counter < self.last_dropped {
-            return;
+    fn is_dropped(&mut self) -> bool {
+        self.frame += self.speed;
+        if self.frame < self.last_dropped {
+            return false;
         }
-
         self.last_dropped += self.threshold;
 
+        true
+    }
+
+    pub fn drop_by_force(&mut self, line: u32) {
         self.position.add_y(line);
+    }
+
+    pub fn dropdown(&mut self, line: u32) {
+        if self.is_dropped() {
+            self.position.add_y(line);
+        }
     }
 
     pub fn regenerate(&mut self, mino: Tetrimino) {
@@ -262,13 +253,15 @@ struct Playfield {
     grid_data: Vec<Vec<Cell>>,
     current: ControlledTetrimino,
     next: Tetrimino,
+    is_pause: bool,
+    is_gameover: bool,
 }
 
 impl Playfield {
     fn init_view_data(width: u32, height: u32) -> Vec<Cell> {
         let mut playfield: Vec<Cell> = vec![];
         for _ in 0..width * height {
-            playfield.push(Cell::Wall);
+            playfield.push(Cell::Filler);
         }
         playfield
     }
@@ -288,14 +281,14 @@ impl Playfield {
                     if (3..=8).contains(&column) {
                         line.push(Cell::Empty);
                     } else {
-                        line.push(Cell::Wall);
+                        line.push(Cell::Filler);
                     }
                 } else if row == bottom_row - 1 {
-                    line.push(Cell::Wall);
+                    line.push(Cell::Filler);
                 } else if (1..=max_column - 2).contains(&column) {
                     line.push(Cell::Empty);
                 } else {
-                    line.push(Cell::Wall);
+                    line.push(Cell::Filler);
                 }
             }
 
@@ -316,6 +309,8 @@ impl Playfield {
             grid_data: Playfield::init_grid_data(width, height),
             current: ControlledTetrimino::new(Tetrimino::default()),
             next: Tetrimino::default(),
+            is_pause: false,
+            is_gameover: false,
         }
     }
 
@@ -365,8 +360,8 @@ impl Playfield {
 
     fn is_collision(&self) -> bool {
         let current = self.current.position.clone();
-        let start_x = current.x() as usize;
-        let start_y = current.y() as usize;
+        let start_x = current.x as usize;
+        let start_y = current.y as usize;
 
         for x in 0..MINO_CELL_SIZE {
             for y in 0..MINO_CELL_SIZE {
@@ -401,7 +396,6 @@ impl Playfield {
         }
     }
 
-    #[allow(dead_code)]
     pub fn move_left(&mut self) {
         let prev = self.current.position.clone();
 
@@ -411,7 +405,6 @@ impl Playfield {
         }
     }
 
-    #[allow(dead_code)]
     pub fn move_right(&mut self) {
         let prev = self.current.position.clone();
 
@@ -421,17 +414,6 @@ impl Playfield {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn soft_drop(&mut self) {
-        console_log!("soft_drop");
-    }
-
-    #[allow(dead_code)]
-    pub fn hard_drop(&mut self) {
-        console_log!("hard_drop");
-    }
-
-    #[allow(dead_code)]
     pub fn rotate_left(&mut self) {
         let prev = self.current.mino.clone();
         self.current.rotate_left();
@@ -441,7 +423,6 @@ impl Playfield {
         }
     }
 
-    #[allow(dead_code)]
     pub fn rotate_right(&mut self) {
         let prev = self.current.mino.clone();
         self.current.rotate_right();
@@ -451,9 +432,14 @@ impl Playfield {
         }
     }
 
-    fn dropdown(&mut self) {
+    fn dropdown(&mut self, line: u32, force: bool) {
         let prev = self.current.position.clone();
-        self.current.dropdown(1);
+
+        if force {
+            self.current.drop_by_force(line);
+        } else {
+            self.current.dropdown(line);
+        }
 
         if self.is_collision() {
             self.current.position = prev;
@@ -463,28 +449,44 @@ impl Playfield {
         }
     }
 
-    #[allow(dead_code)]
+    pub fn toggle_pause(&mut self) {
+        self.is_pause = !self.is_pause;
+    }
+
     pub fn update(&mut self) {
-        self.dropdown();
+        if self.is_pause {
+            return;
+        }
+        if self.current.position.y == 0 && self.is_collision() {
+            self.is_gameover = true;
+            return;
+        }
+
+        self.dropdown(1, false);
         self.update_view_data();
     }
 }
 
 #[wasm_bindgen]
-struct GameIO {
+pub struct GameIO {
     playfield: Playfield,
-    count: usize,
 }
 
-#[wasm_bindgen]
-impl GameIO {
-    pub fn new() -> Self {
+impl Default for GameIO {
+    fn default() -> Self {
         use crate::utils::set_panic_hook;
         set_panic_hook();
         Self {
             playfield: Playfield::new(),
-            count: usize::MIN,
         }
+    }
+}
+
+#[allow(clippy::unused_unit)]
+#[wasm_bindgen]
+impl GameIO {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn width(&self) -> u32 {
@@ -507,6 +509,18 @@ impl GameIO {
         self.playfield.update();
     }
 
+    pub fn is_gameover(&self) -> bool {
+        self.playfield.is_gameover
+    }
+
+    pub fn is_pause(&self) -> bool {
+        self.playfield.is_pause
+    }
+
+    pub fn toggle_pause(&mut self) {
+        self.playfield.toggle_pause();
+    }
+
     pub fn move_left(&mut self) {
         self.playfield.move_left();
     }
@@ -516,7 +530,7 @@ impl GameIO {
     }
 
     pub fn soft_drop(&mut self) {
-        console_log!("soft_drop");
+        self.playfield.dropdown(1, true);
     }
 
     pub fn hard_drop(&mut self) {

@@ -3,10 +3,10 @@ use super::Cell;
 pub const MINO_CELL_SIZE: usize = 4;
 
 type MinoLine = [Cell; MINO_CELL_SIZE];
-pub type Mino = [MinoLine; MINO_CELL_SIZE];
+pub type MinoData = [MinoLine; MINO_CELL_SIZE];
 
 #[rustfmt::skip]
-pub const EMPTY_MINO: Mino = [
+pub const EMPTY_MINO: MinoData = [
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
@@ -14,57 +14,57 @@ pub const EMPTY_MINO: Mino = [
 ];
 
 #[rustfmt::skip]
-pub const I_MINO: Mino = [
+pub const I_MINO: MinoData = [
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::I,     Cell::I,     Cell::I,     Cell::I    ],
+    [Cell::IMino, Cell::IMino, Cell::IMino, Cell::IMino],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-];
-
-#[rustfmt::skip]
-pub const O_MINO: Mino = [
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::O,     Cell::O,     Cell::Empty],
-    [Cell::Empty, Cell::O,     Cell::O,     Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];
 
 #[rustfmt::skip]
-pub const S_MINO: Mino = [
+pub const O_MINO: MinoData = [
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::S,     Cell::S,     Cell::Empty],
-    [Cell::S,     Cell::S,     Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-];
-
-#[rustfmt::skip]
-pub const Z_MINO: Mino = [
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::Z,     Cell::Z,     Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Z,     Cell::Z    ],
+    [Cell::Empty, Cell::OMino, Cell::OMino, Cell::Empty],
+    [Cell::Empty, Cell::OMino, Cell::OMino, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];
 
 #[rustfmt::skip]
-pub const J_MINO: Mino = [
+pub const S_MINO: MinoData = [
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::J,     Cell::J,     Cell::J,     Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::J,     Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-];
-
-#[rustfmt::skip]
-pub const L_MINO: Mino = [
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::L    ],
-    [Cell::Empty, Cell::L,     Cell::L,     Cell::L    ],
+    [Cell::Empty, Cell::SMino, Cell::SMino, Cell::Empty],
+    [Cell::SMino, Cell::SMino, Cell::Empty, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];
 
 #[rustfmt::skip]
-pub const T_MINO: Mino = [
+pub const Z_MINO: MinoData = [
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
-    [Cell::Empty, Cell::T,     Cell::Empty, Cell::Empty],
-    [Cell::T,     Cell::T,     Cell::T,     Cell::Empty],
+    [Cell::Empty, Cell::ZMino, Cell::ZMino, Cell::Empty],
+    [Cell::Empty, Cell::Empty, Cell::ZMino, Cell::ZMino],
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+];
+
+#[rustfmt::skip]
+pub const J_MINO: MinoData = [
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+    [Cell::JMino, Cell::JMino, Cell::JMino, Cell::Empty],
+    [Cell::Empty, Cell::Empty, Cell::JMino, Cell::Empty],
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+];
+
+#[rustfmt::skip]
+pub const L_MINO: MinoData = [
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::LMino],
+    [Cell::Empty, Cell::LMino, Cell::LMino, Cell::LMino],
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+];
+
+#[rustfmt::skip]
+pub const T_MINO: MinoData = [
+    [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
+    [Cell::Empty, Cell::TMino, Cell::Empty, Cell::Empty],
+    [Cell::TMino, Cell::TMino, Cell::TMino, Cell::Empty],
     [Cell::Empty, Cell::Empty, Cell::Empty, Cell::Empty],
 ];

@@ -3,12 +3,8 @@ import {
   withGameIO,
   renderLoop,
   FPS,
-  pressLeft,
-  pressRight,
-  pressSoftDrop,
-  pressRotateLeft,
-  pressRotateRight,
-  pressHardDrop,
+  handleKeyDown,
+  handleKeyUp,
 } from '~app/lib/wasm';
 import styles from './main.module.scss';
 
@@ -42,21 +38,20 @@ export const PlayfieldCanvas = () => {
       return;
     }
 
-    const keydown = (ev: KeyboardEvent) => {
-      withGameIO((game) => {
-        if (ev.code === 'KeyA') pressLeft({ game });
-        if (ev.code === 'KeyD') pressRight({ game });
-        if (ev.code === 'KeyS') pressSoftDrop({ game });
-        if (ev.code === 'KeyJ') pressRotateLeft({ game });
-        if (ev.code === 'KeyK') pressRotateRight({ game });
-        if (ev.code === 'Space') pressHardDrop({ game });
-      });
+    const keydownEvent = (ev: KeyboardEvent) => {
+      handleKeyDown(ev.code);
     };
 
-    window.addEventListener('keydown', keydown);
+    const keyupEvent = (ev: KeyboardEvent) => {
+      handleKeyUp(ev.code);
+    };
+
+    window.addEventListener('keydown', keydownEvent);
+    window.addEventListener('keyup', keyupEvent);
 
     return () => {
-      window.removeEventListener('keydown', keydown);
+      window.removeEventListener('keydown', keydownEvent);
+      window.removeEventListener('keyup', keyupEvent);
     };
   }, []);
 
