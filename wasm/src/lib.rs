@@ -278,7 +278,7 @@ impl Playfield {
 
             for column in 0..max_column {
                 if (top_row..=top_row + 1).contains(&row) {
-                    if (3..=8).contains(&column) {
+                    if (4..=7).contains(&column) {
                         line.push(Cell::Empty);
                     } else {
                         line.push(Cell::Filler);
@@ -450,6 +450,11 @@ impl Playfield {
     }
 
     pub fn toggle_pause(&mut self) {
+        if self.is_gameover {
+            self.is_pause = false;
+            return;
+        }
+
         self.is_pause = !self.is_pause;
     }
 
