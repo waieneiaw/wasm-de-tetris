@@ -1,10 +1,9 @@
 import React from 'react';
-import type { NextPage } from 'next';
 import Head from 'next/head';
-import { PlayfieldCanvas } from '../playfield-canvas';
+import { GameCanvas } from '../game-canvas';
 import styles from './main.module.scss';
 
-export const HomePage: NextPage = () => (
+export const HomePage = () => (
   <div className={styles.root}>
     <Head>
       <title>WASM-de-TETRIS</title>
@@ -12,12 +11,12 @@ export const HomePage: NextPage = () => (
       <link rel="icon" href="/favicon.ico" />
     </Head>
 
-    <header className={styles.header}>header</header>
+    <header className={styles.header}>WASM-de-TETRIS</header>
 
     <main className={styles.main}>
-      <PlayfieldCanvas />
+      <GameCanvas />
     </main>
 
-    <footer className={styles.footer}>footer</footer>
+    <footer className={styles.footer}>&copy; 2022 waien</footer>
   </div>
 );

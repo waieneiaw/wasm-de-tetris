@@ -29,9 +29,9 @@ type State = {
   rotateLeft: KeyStateValue;
   rotateRight: KeyStateValue;
   softDrop: KeyStateValue;
-  hardDrop: KeyStateValue;
   togglePause: KeyStateValue;
   anyKeys: KeyStateValue;
+  hardDrop: KeyStateValue;
 };
 
 const _initialValue: State = {
@@ -122,15 +122,16 @@ export const updateKeyState = (args: { game: GameIO }) => {
   _handleKeyInput('softDrop', () => args.game.soft_drop());
   _handleKeyInput('rotateLeft', () => args.game.rotate_left());
   _handleKeyInput('rotateRight', () => args.game.rotate_right());
-  _handleKeyInput('hardDrop', () => args.game.hard_drop());
   _handleKeyInput('togglePause', () => args.game.toggle_pause());
 
   if (args.game.is_startup()) {
     _handleKeyInput('anyKeys', () => args.game.run());
   }
-  // if (args.game.is_gameover()) {
-  //   _handleKeyInput('anyKeys', () => () => args.game.restart());
-  // }
+  if (args.game.is_gameover()) {
+    setTimeout(() => {
+      _handleKeyInput('anyKeys', () => args.game.restart());
+    }, 1000);
+  }
 };
 
 export const handleKeyDown = (keyCode: string) => {
@@ -139,25 +140,23 @@ export const handleKeyDown = (keyCode: string) => {
   if (keyCode === 'KeyS') _keyState.softDrop.isInputed = true;
   if (keyCode === 'KeyJ') _keyState.rotateLeft.isInputed = true;
   if (keyCode === 'KeyK') _keyState.rotateRight.isInputed = true;
-  if (keyCode === 'Space') _keyState.hardDrop.isInputed = true;
   if (keyCode === 'Escape') _keyState.togglePause.isInputed = true;
 
   _keyState.anyKeys.isInputed = true;
 };
 
-const clearKeyState = (key: keyof State) => {
+const _clearKeyState = (key: keyof State) => {
   _keyState[key].frame = 0;
   _keyState[key].isInputed = false;
 };
 
 export const handleKeyUp = (keyCode: string) => {
-  if (keyCode === 'KeyA') clearKeyState('moveLeft');
-  if (keyCode === 'KeyD') clearKeyState('moveRight');
-  if (keyCode === 'KeyS') clearKeyState('softDrop');
-  if (keyCode === 'KeyJ') clearKeyState('rotateLeft');
-  if (keyCode === 'KeyK') clearKeyState('rotateRight');
-  if (keyCode === 'Space') clearKeyState('hardDrop');
-  if (keyCode === 'Escape') clearKeyState('togglePause');
+  if (keyCode === 'KeyA') _clearKeyState('moveLeft');
+  if (keyCode === 'KeyD') _clearKeyState('moveRight');
+  if (keyCode === 'KeyS') _clearKeyState('softDrop');
+  if (keyCode === 'KeyJ') _clearKeyState('rotateLeft');
+  if (keyCode === 'KeyK') _clearKeyState('rotateRight');
+  if (keyCode === 'Escape') _clearKeyState('togglePause');
 
-  clearKeyState('anyKeys');
+  _clearKeyState('anyKeys');
 };

@@ -1,1 +1,0 @@
-export { PlayfieldCanvas } from './main';

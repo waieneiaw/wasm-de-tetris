@@ -1,23 +1,18 @@
 import { GameIO, Cell } from '~app/@wasm/wasm';
 import { memory } from '~app/@wasm/wasm_bg.wasm';
-import { CANVAS, FONT } from './constants';
-import { updateKeyState } from './key';
+import { CANVAS, FONT, COLOR, CELL_SIZE } from './constants';
+import { updateKeyState } from './input';
 
-const CELL_SIZE = 16; // px
-const GRID_COLOR = '#cccccc';
-const EMPTY_COLOR = '#dddddd';
-const FILLER_COLOR = '#000000';
-
-const getIndex = (game: GameIO, row: number, col: number) =>
+const _getIndex = (game: GameIO, row: number, col: number) =>
   game.get_index(row, col);
 
-const drawGrid = (args: {
+const _drawGrid = (args: {
   game: GameIO;
   ctx: CanvasRenderingContext2D;
   cellSize: number;
 }) => {
   args.ctx.beginPath();
-  args.ctx.strokeStyle = GRID_COLOR;
+  args.ctx.strokeStyle = COLOR.GRID;
 
   const width = args.game.width();
   const height = args.game.height();
@@ -43,7 +38,7 @@ const drawGrid = (args: {
   args.ctx.stroke();
 };
 
-const drawCells = (args: {
+const _drawCells = (args: {
   ctx: CanvasRenderingContext2D;
   cellSize: number;
   game: GameIO;
@@ -59,54 +54,54 @@ const drawCells = (args: {
 
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
-      const idx = getIndex(args.game, row, col);
+      const idx = _getIndex(args.game, row, col);
       if (isGameover) {
         switch (cells[idx]) {
           case Cell.Empty: {
-            args.ctx.fillStyle = EMPTY_COLOR;
+            args.ctx.fillStyle = COLOR.EMPTY;
             break;
           }
           default: {
-            args.ctx.fillStyle = FILLER_COLOR;
+            args.ctx.fillStyle = COLOR.FILLER;
             break;
           }
         }
       } else {
         switch (cells[idx]) {
           case Cell.Filler: {
-            args.ctx.fillStyle = FILLER_COLOR;
+            args.ctx.fillStyle = COLOR.FILLER;
             break;
           }
           case Cell.IMino: {
-            args.ctx.fillStyle = '#00F0F0';
+            args.ctx.fillStyle = COLOR.I;
             break;
           }
           case Cell.JMino: {
-            args.ctx.fillStyle = '#0000FF';
+            args.ctx.fillStyle = COLOR.J;
             break;
           }
           case Cell.LMino: {
-            args.ctx.fillStyle = '#FF8800';
+            args.ctx.fillStyle = COLOR.L;
             break;
           }
           case Cell.OMino: {
-            args.ctx.fillStyle = '#FFFF00';
+            args.ctx.fillStyle = COLOR.O;
             break;
           }
           case Cell.SMino: {
-            args.ctx.fillStyle = '#88FF00';
+            args.ctx.fillStyle = COLOR.S;
             break;
           }
           case Cell.TMino: {
-            args.ctx.fillStyle = '#FF00FF';
+            args.ctx.fillStyle = COLOR.T;
             break;
           }
           case Cell.ZMino: {
-            args.ctx.fillStyle = '#FF0000';
+            args.ctx.fillStyle = COLOR.Z;
             break;
           }
           default: {
-            args.ctx.fillStyle = EMPTY_COLOR;
+            args.ctx.fillStyle = COLOR.EMPTY;
             break;
           }
         }
@@ -124,15 +119,19 @@ const drawCells = (args: {
   }
 };
 
-const drawStartup = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
+const _drawStartupScreen = (args: {
+  ctx: CanvasRenderingContext2D;
+  game: GameIO;
+}) => {
   if (!args.game.is_startup()) {
     return;
   }
+  args.ctx.clearRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
   args.ctx.beginPath();
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0] + ')';
-  args.ctx.fillRect(0, 0, 400, 400);
+  args.ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
   const fontSize = FONT.SMALL_SIZE;
 
@@ -141,12 +140,15 @@ const drawStartup = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
   const y = CANVAS.HEIGHT / 2;
 
   args.ctx.font = FONT.STYLE(fontSize);
-  args.ctx.fillStyle = '#FFFFFF';
+  args.ctx.fillStyle = COLOR.FONT;
   args.ctx.fillText('HIT', x1, y);
-  args.ctx.fillText('ANY KEY', x2, y + 40);
+  args.ctx.fillText('ANY KEY', x2, y + FONT.LINE_HEIGHT);
 };
 
-const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
+const _drawPauseScreen = (args: {
+  ctx: CanvasRenderingContext2D;
+  game: GameIO;
+}) => {
   if (!args.game.is_pause()) {
     return;
   }
@@ -154,7 +156,7 @@ const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
   args.ctx.beginPath();
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
   args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0.5] + ')';
-  args.ctx.fillRect(0, 0, 400, 400);
+  args.ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
   const fontSize = FONT.SIZE;
 
@@ -162,10 +164,11 @@ const drawPause = (args: { ctx: CanvasRenderingContext2D; game: GameIO }) => {
   const y = CANVAS.HEIGHT / 2;
 
   args.ctx.font = FONT.STYLE(fontSize);
-  args.ctx.strokeText('PAUSE', x, y);
+  args.ctx.fillStyle = COLOR.FONT;
+  args.ctx.fillText('PAUSE', x, y);
 };
 
-const drawGameOver = (args: {
+const _drawGameOverScreen = (args: {
   ctx: CanvasRenderingContext2D;
   game: GameIO;
 }) => {
@@ -179,23 +182,35 @@ const drawGameOver = (args: {
   const y = CANVAS.HEIGHT / 2;
 
   args.ctx.font = FONT.STYLE(fontSize);
-  args.ctx.fillStyle = '#FFFFFF';
+  args.ctx.fillStyle = COLOR.FONT;
   args.ctx.fillText('GAME', x, y);
-  args.ctx.fillText('OVER', x, y + 40);
+  args.ctx.fillText('OVER', x, y + FONT.LINE_HEIGHT);
+};
+
+const _update = (args: { game: GameIO }) => {
+  updateKeyState({ game: args.game });
+
+  args.game.update();
+};
+
+const _draw = (args: {
+  game: GameIO;
+  ctxMainLayer: CanvasRenderingContext2D;
+  ctxScreenLayer: CanvasRenderingContext2D;
+}) => {
+  _drawGrid({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
+  _drawCells({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
+
+  _drawStartupScreen({ game: args.game, ctx: args.ctxScreenLayer });
+  _drawPauseScreen({ game: args.game, ctx: args.ctxScreenLayer });
+  _drawGameOverScreen({ game: args.game, ctx: args.ctxScreenLayer });
 };
 
 export const renderLoop = (args: {
   game: GameIO;
   ctxMainLayer: CanvasRenderingContext2D;
-  ctxFontLayer: CanvasRenderingContext2D;
+  ctxScreenLayer: CanvasRenderingContext2D;
 }) => {
-  updateKeyState({ game: args.game });
-
-  args.game.update();
-
-  drawGrid({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
-  drawCells({ game: args.game, ctx: args.ctxMainLayer, cellSize: CELL_SIZE });
-  drawStartup({ game: args.game, ctx: args.ctxFontLayer });
-  drawPause({ game: args.game, ctx: args.ctxFontLayer });
-  drawGameOver({ game: args.game, ctx: args.ctxFontLayer });
+  _update({ game: args.game });
+  _draw(args);
 };

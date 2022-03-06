@@ -11,10 +11,10 @@ import styles from './main.module.scss';
 
 const _LAYER_ID = {
   MAIN: '___canvas_main',
-  FONT: '___canvas_font',
+  SCREEN: '___canvas_screen',
 } as const;
 
-export const PlayfieldCanvas = () => {
+export const GameCanvas = () => {
   React.useEffect(() => {
     if (!document) {
       return;
@@ -33,14 +33,14 @@ export const PlayfieldCanvas = () => {
     }
 
     const fontLayer = document.getElementById(
-      _LAYER_ID.FONT,
+      _LAYER_ID.SCREEN,
     ) as HTMLCanvasElement;
     if (!fontLayer) {
       return;
     }
 
-    const ctxFontLayer = mainLayer.getContext('2d');
-    if (!ctxFontLayer) {
+    const ctxScreenLayer = mainLayer.getContext('2d');
+    if (!ctxScreenLayer) {
       return;
     }
 
@@ -49,7 +49,7 @@ export const PlayfieldCanvas = () => {
         renderLoop({
           game,
           ctxMainLayer,
-          ctxFontLayer,
+          ctxScreenLayer,
         });
       });
     };
@@ -81,20 +81,20 @@ export const PlayfieldCanvas = () => {
 
   return (
     <div className={styles.root}>
-      <canvas
-        id={_LAYER_ID.MAIN}
-        className={styles.canvas}
-        width={CANVAS.WIDTH}
-        height={CANVAS.HEIGHT}
-        data-main-layer
-      />
-      <canvas
-        id={_LAYER_ID.FONT}
-        className={styles.canvas}
-        width={CANVAS.WIDTH}
-        height={CANVAS.HEIGHT}
-        data-font-layer
-      />
+      <div className={styles.container}>
+        <canvas
+          id={_LAYER_ID.MAIN}
+          className={styles.canvas}
+          width={CANVAS.WIDTH}
+          height={CANVAS.HEIGHT}
+        />
+        <canvas
+          id={_LAYER_ID.SCREEN}
+          className={styles.canvas}
+          width={CANVAS.WIDTH}
+          height={CANVAS.HEIGHT}
+        />
+      </div>
     </div>
   );
 };
