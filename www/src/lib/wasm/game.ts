@@ -1,5 +1,5 @@
-import { GameIO, Cell } from '~app/@wasm/wasm';
-import { memory } from '~app/@wasm/wasm_bg.wasm';
+import { GameIO, Cell } from 'wasm/wasm';
+import { memory } from 'wasm/wasm_bg.wasm';
 import { CANVAS, FONT, COLOR, CELL_SIZE } from './constants';
 import { updateKeyState } from './input';
 

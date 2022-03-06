@@ -1,6 +1,6 @@
 import * as React from 'react';
-import * as WASM from '~app/@wasm/wasm';
-import { GameIO } from '~app/@wasm/wasm';
+import * as WASM from 'wasm/wasm';
+import { GameIO } from 'wasm/wasm';
 
 type WASM = typeof WASM;
 
@@ -13,7 +13,7 @@ let gameIO: GameIO;
  * `useWASMLoader`経由でインポートを行うことで対処する。
  */
 // void (async () => {
-//   const _wasm = await import('~app/@wasm/wasm');
+//   const _wasm = await import('wasm/wasm');
 //   wasm = _wasm;
 
 //   const { GameIO } = _wasm;
@@ -44,7 +44,7 @@ export const withGameIO = <T>(callback: (game: GameIO) => T) => {
 export const useWASMLoader = () => {
   React.useEffect(() => {
     const load = async () => {
-      const _wasm = await import('~app/@wasm/wasm');
+      const _wasm = await import('wasm/wasm');
       wasm = _wasm;
 
       const { GameIO } = _wasm;

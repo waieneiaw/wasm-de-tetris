@@ -1,4 +1,4 @@
-import { GameIO } from '~app/@wasm/wasm';
+import { GameIO } from 'wasm/wasm';
 
 /**
  * キーの押しっぱなしによる挙動の種類を定義する。

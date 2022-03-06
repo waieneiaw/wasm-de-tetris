@@ -25,8 +25,7 @@ script = '''
 cd ${__MAKERS_WASM_DIR} \
   && cargo watch -i .gitignore \
     -i "../${__MAKERS_WASM_OUT_DIR}/*" \
-    -s "wasm-pack build -d ../${__MAKERS_WASM_OUT_DIR}" &
-makers npm run dev
+    -s "wasm-pack build" & makers npm run dev
 '''
 
 [tasks.npm]
