@@ -1,0 +1,19 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: 'Press Start 2P';
+}
+
+.header,
+.footer {
+  display: flex;
+  justify-content: center;
+}
+
+.main {
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,35 @@
+[config]
+skip_core_tasks = true
+
+[env]
+__MAKERS_WWW_DIR = "www"
+__MAKERS_WASM_DIR = "wasm"
+__MAKERS_WASM_OUT_DIR = "${__MAKERS_WWW_DIR}/src/@wasm"
+
+[tasks.setup]
+script = '''
+#!/usr/bin/env bash
+makers npm i
+'''
+
+[tasks.build-all]
+script = '''
+#!/usr/bin/env bash
+cd ${__MAKERS_WASM_DIR} && wasm-pack build -d ../${__MAKERS_WASM_OUT_DIR}
+cd .. && makers npm run build
+'''
+
+[tasks.watch]
+script = '''
+#!/usr/bin/env bash
+cd ${__MAKERS_WASM_DIR} \
+  && cargo watch -i .gitignore \
+    -i "../${__MAKERS_WASM_OUT_DIR}/*" \
+    -s "wasm-pack build" & makers npm run dev
+'''
+
+[tasks.npm]
+script = '''
+#!/usr/bin/env bash
+cd ${__MAKERS_WWW_DIR} && npm ${@}
+'''

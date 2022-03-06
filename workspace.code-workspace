@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "name": "/root",
+      "path": "./"
+    },
+    {
+      "name": "rust",
+      "path": "./wasm"
+    },
+    {
+      "name": "www",
+      "path": "./www"
+    },
+  ],
+  "settings": {}
+}
