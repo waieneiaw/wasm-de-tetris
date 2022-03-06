@@ -110,7 +110,7 @@ module.exports = {
     'import/resolver': {
       alias: {
         extensions: ['.js', '.jsx', '.ts', '.tsx', '.scss'],
-        map: [['~self', './src']],
+        map: [['~app', './src']],
         node: {
           extensions: ['.js', 'jsx', '.ts', '.tsx'],
           paths: ['src', 'test'],
