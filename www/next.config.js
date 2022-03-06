@@ -1,5 +1,9 @@
+const REPO_NAME = 'wasm-de-tetris'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: process.env.GITHUB_ACTIONS ? `/${REPO_NAME}` : "",
+  trailingSlash: true,
   reactStrictMode: true,
   webpack: (config, { isServer }) => {
     config.module.rules.push({
