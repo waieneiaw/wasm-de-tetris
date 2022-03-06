@@ -66,8 +66,7 @@ pub enum TetriminoKind {
 impl Default for TetriminoKind {
     fn default() -> Self {
         use rand::Rng;
-        // // let kind = rand::thread_rng().gen_range(0..6) as u32; // rand v0.8
-        let kind = rand::thread_rng().gen_range(0, 6) as u32;
+        let kind = rand::thread_rng().gen_range(0..6) as u32;
 
         TetriminoKind::from(kind)
     }

@@ -6,6 +6,7 @@ import {
   FPS,
   handleKeyDown,
   handleKeyUp,
+  useWASMLoader,
 } from '~app/lib/wasm';
 import styles from './main.module.scss';
 
@@ -15,6 +16,8 @@ const _LAYER_ID = {
 } as const;
 
 export const GameCanvas = () => {
+  useWASMLoader();
+
   React.useEffect(() => {
     if (!document) {
       return;
