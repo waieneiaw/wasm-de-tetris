@@ -17,8 +17,7 @@ class MyDocument extends Document {
     return (
       <Html lang="ja">
         <Head>
-          <meta name="theme-color" content="#f9a8d4" />
-          <link rel="apple-touch-icon" href="/icon-192x192.png" />
+          <meta name="theme-color" content="#000000" />
           <link rel="icon" href="/favicon.ico" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link
