@@ -18,6 +18,7 @@ extern "C" {
     fn log(s: &str);
 }
 
+#[allow(unused_macros)]
 macro_rules! console_log {
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
 }
@@ -646,10 +647,6 @@ impl GameIO {
 
     pub fn soft_drop(&mut self) {
         self.playfield.dropdown(1, true);
-    }
-
-    pub fn hard_drop(&mut self) {
-        console_log!("hard_drop");
     }
 
     pub fn rotate_left(&mut self) {

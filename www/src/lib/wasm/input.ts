@@ -31,7 +31,6 @@ type State = {
   softDrop: KeyStateValue;
   togglePause: KeyStateValue;
   anyKeys: KeyStateValue;
-  hardDrop: KeyStateValue;
 };
 
 const _initialValue: State = {
@@ -59,11 +58,6 @@ const _initialValue: State = {
     frame: 0,
     isInputed: false,
     holdBehavior: 'SMOOTH',
-  },
-  hardDrop: {
-    frame: 0,
-    isInputed: false,
-    holdBehavior: 'NEVER',
   },
   togglePause: {
     frame: 0,
