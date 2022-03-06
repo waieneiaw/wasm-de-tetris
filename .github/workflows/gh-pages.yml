@@ -45,12 +45,16 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: npm install
-        run: npm i
+        run: npm install --frozen-lockfile
         working-directory: www
 
       - name: Build www
         run: npm run build
         working-directory: www
+
+      - name: Add .nojekyll
+        run: touch .nojekyll
+        working-directory: www/out
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
