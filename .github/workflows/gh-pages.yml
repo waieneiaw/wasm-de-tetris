@@ -24,7 +24,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Build WASM
-        run: cargo build
+        run: wasm-pack build
         working-directory: wasm
 
       - name: Setup Node.js
