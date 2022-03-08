@@ -28,7 +28,7 @@ macro_rules! console_log {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Cell {
     Empty,
-    Filler,
+    Tetrion,
     IMino,
     JMino,
     LMino,
@@ -132,7 +132,7 @@ impl Point {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tetrimino {
     kind: TetriminoKind,
-    blocks: MinoData,
+    cells: MinoData,
 }
 
 impl Default for Tetrimino {
@@ -141,7 +141,7 @@ impl Default for Tetrimino {
 
         Self {
             kind,
-            blocks: match kind {
+            cells: match kind {
                 TetriminoKind::I => I_MINO,
                 TetriminoKind::J => J_MINO,
                 TetriminoKind::L => L_MINO,
@@ -157,24 +157,24 @@ impl Default for Tetrimino {
 impl Tetrimino {
     pub fn rotate_left(&mut self) {
         let mut new_blocks = EMPTY_MINO;
-        for (y, rows) in self.blocks.iter().enumerate() {
+        for (y, rows) in self.cells.iter().enumerate() {
             for (x, _) in rows.iter().enumerate() {
-                new_blocks[self.blocks.len() - 1 - x][y] = self.blocks[y][x]
+                new_blocks[self.cells.len() - 1 - x][y] = self.cells[y][x]
             }
         }
 
-        self.blocks = new_blocks;
+        self.cells = new_blocks;
     }
 
     pub fn rotate_right(&mut self) {
         let mut new_blocks = EMPTY_MINO;
-        for (y, rows) in self.blocks.iter().enumerate() {
+        for (y, rows) in self.cells.iter().enumerate() {
             for (x, _) in rows.iter().enumerate() {
-                new_blocks[x][self.blocks.len() - 1 - y] = self.blocks[y][x]
+                new_blocks[x][self.cells.len() - 1 - y] = self.cells[y][x]
             }
         }
 
-        self.blocks = new_blocks;
+        self.cells = new_blocks;
     }
 }
 
@@ -251,33 +251,33 @@ impl ControlledTetrimino {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum PlayfieldState {
+enum GameState {
     Startup,
     Running,
     Pause,
     Gameover,
 }
 
-struct Playfield {
+struct Game {
     width: u32,
     height: u32,
-    view_data: Vec<Cell>,
-    grid_data: Vec<Vec<Cell>>,
+    cells: Vec<Cell>,
+    playfield: Vec<Vec<Cell>>,
     current: ControlledTetrimino,
     next: Tetrimino,
-    state: PlayfieldState,
+    state: GameState,
 }
 
-impl Playfield {
-    fn init_view_data(width: u32, height: u32) -> Vec<Cell> {
-        let mut playfield: Vec<Cell> = vec![];
+impl Game {
+    fn init_cells(width: u32, height: u32) -> Vec<Cell> {
+        let mut cells: Vec<Cell> = vec![];
         for _ in 0..width * height {
-            playfield.push(Cell::Filler);
+            cells.push(Cell::Tetrion);
         }
-        playfield
+        cells
     }
 
-    fn init_grid_data(width: u32, height: u32) -> Vec<Vec<Cell>> {
+    fn init_playfield(width: u32, height: u32) -> Vec<Vec<Cell>> {
         let mut playfield: Vec<Vec<Cell>> = vec![];
 
         let max_column = width;
@@ -292,14 +292,14 @@ impl Playfield {
                     if (4..=7).contains(&column) {
                         line.push(Cell::Empty);
                     } else {
-                        line.push(Cell::Filler);
+                        line.push(Cell::Tetrion);
                     }
                 } else if row == bottom_row - 1 {
-                    line.push(Cell::Filler);
+                    line.push(Cell::Tetrion);
                 } else if (1..=max_column - 2).contains(&column) {
                     line.push(Cell::Empty);
                 } else {
-                    line.push(Cell::Filler);
+                    line.push(Cell::Tetrion);
                 }
             }
 
@@ -316,16 +316,16 @@ impl Playfield {
         Self {
             width,
             height,
-            view_data: Playfield::init_view_data(width, height),
-            grid_data: Playfield::init_grid_data(width, height),
+            cells: Game::init_cells(width, height),
+            playfield: Game::init_playfield(width, height),
             current: ControlledTetrimino::new(Tetrimino::default()),
             next: Tetrimino::default(),
-            state: PlayfieldState::Startup,
+            state: GameState::Startup,
         }
     }
 
     pub fn run(&mut self) {
-        self.state = PlayfieldState::Running;
+        self.state = GameState::Running;
     }
 
     pub fn width(&self) -> u32 {
@@ -336,21 +336,21 @@ impl Playfield {
         self.height
     }
 
-    pub fn view_data_ptr(&self) -> *const Cell {
-        self.view_data.as_ptr()
+    pub fn cells_ptr(&self) -> *const Cell {
+        self.cells.as_ptr()
     }
 
-    pub fn update_view_data(&mut self) {
+    pub fn update_cells(&mut self) {
         for y in 0..self.height - 1 {
             for x in 0..self.width - 1 {
                 let i = (y * self.width + x) as usize;
 
-                self.view_data[i] = self.grid_data[y as usize][x as usize];
+                self.cells[i] = self.playfield[y as usize][x as usize];
             }
         }
 
         let position = self.current.position.clone();
-        let blocks = self.current.mino.blocks;
+        let blocks = self.current.mino.cells;
         let kind = self.current.mino.kind.to_owned();
 
         for (y, rows) in blocks.iter().enumerate() {
@@ -363,12 +363,12 @@ impl Playfield {
                 let point = Point::new(x as u32, y as u32) + position.clone();
                 let i = point.y * (self.width) + point.x;
 
-                self.view_data[i as usize] = Cell::from(kind);
+                self.cells[i as usize] = Cell::from(kind);
             }
         }
     }
 
-    pub fn get_view_data_index(&self, row: u32, column: u32) -> usize {
+    pub fn get_cells_index(&self, row: u32, column: u32) -> usize {
         (row * self.width + column) as usize
     }
 
@@ -379,12 +379,12 @@ impl Playfield {
 
         for x in 0..MINO_CELL_SIZE {
             for y in 0..MINO_CELL_SIZE {
-                if self.current.mino.blocks[y][x] == Cell::Empty {
+                if self.current.mino.cells[y][x] == Cell::Empty {
                     // テトリミノのブロックがない場合は無視する
                     continue;
                 }
 
-                if self.grid_data[start_y + y][start_x + x] != Cell::Empty {
+                if self.playfield[start_y + y][start_x + x] != Cell::Empty {
                     return true;
                 }
             }
@@ -400,12 +400,12 @@ impl Playfield {
 
         for x in 0..MINO_CELL_SIZE {
             for y in 0..MINO_CELL_SIZE {
-                if self.current.mino.blocks[y][x] == Cell::Empty {
+                if self.current.mino.cells[y][x] == Cell::Empty {
                     // テトリミノのブロックがない場合は無視する
                     continue;
                 }
 
-                self.grid_data[start_y + y][start_x + x] = self.current.mino.blocks[y][x]
+                self.playfield[start_y + y][start_x + x] = self.current.mino.cells[y][x]
             }
         }
     }
@@ -465,8 +465,8 @@ impl Playfield {
 
     pub fn toggle_pause(&mut self) {
         match self.state {
-            PlayfieldState::Pause => self.state = PlayfieldState::Running,
-            PlayfieldState::Running => self.state = PlayfieldState::Pause,
+            GameState::Pause => self.state = GameState::Running,
+            GameState::Running => self.state = GameState::Pause,
             _ => {}
         }
     }
@@ -474,12 +474,11 @@ impl Playfield {
     fn complete_lines(&mut self) {
         let mut completed_lines: Vec<u32> = vec![];
 
-        // 下から4行以外は埋まらないので、その4行のみを対象にする
         for y in 0..self.height - 1 {
             let mut is_completed = true;
             for x in 0..self.width - 1 {
-                let cell = self.grid_data[y as usize][x as usize];
-                if cell == Cell::Filler {
+                let cell = self.playfield[y as usize][x as usize];
+                if cell == Cell::Tetrion {
                     continue;
                 }
 
@@ -499,85 +498,83 @@ impl Playfield {
         }
 
         for line in completed_lines {
-            // 最下層の行から順番に処理する
+            // クリアしたライン分落としたいので、最下層の行から順番に処理する
             // 一番上の行は処理する必要がないため、1からスタートする
             for y in (1..line).rev() {
                 for x in 0..self.width - 1 {
                     let y = y as usize;
                     let x = x as usize;
 
-                    if self.grid_data[y][x] == Cell::Filler {
+                    if self.playfield[y][x] == Cell::Tetrion {
                         continue;
                     }
 
-                    if self.grid_data[y - 1][x] == Cell::Filler {
-                        // コピー元のセルが`Filler`の場合はコピーさせたくないので次にループする
+                    if self.playfield[y - 1][x] == Cell::Tetrion {
+                        // コピー元のセルが`Tetrion`の場合もコピーさせたくないので無視する
                         continue;
                     }
 
-                    self.grid_data[y][x] = self.grid_data[y - 1][x];
-                    self.grid_data[y - 1][x] = Cell::Empty;
+                    self.playfield[y][x] = self.playfield[y - 1][x];
+                    self.playfield[y - 1][x] = Cell::Empty;
                 }
             }
         }
     }
 
     pub fn update(&mut self) {
-        if self.state != PlayfieldState::Running {
+        if self.state != GameState::Running {
             return;
         }
 
         if self.current.position.y == 0 && self.is_collision() {
-            self.state = PlayfieldState::Gameover;
+            self.state = GameState::Gameover;
             return;
         }
 
         self.complete_lines();
         self.dropdown(1, false);
-        self.update_view_data();
+        self.update_cells();
     }
 
     pub fn is_gameover(&self) -> bool {
-        self.state == PlayfieldState::Gameover
+        self.state == GameState::Gameover
     }
 
     pub fn is_pause(&self) -> bool {
-        self.state == PlayfieldState::Pause
+        self.state == GameState::Pause
     }
 
     pub fn is_startup(&self) -> bool {
-        self.state == PlayfieldState::Startup
+        self.state == GameState::Startup
     }
 
     pub fn is_running(&self) -> bool {
-        self.state == PlayfieldState::Running
+        self.state == GameState::Running
     }
 
     pub fn restart(&mut self) {
         *self = Self {
             width: self.width,
             height: self.height,
-            view_data: Playfield::init_view_data(self.width, self.height),
-            grid_data: Playfield::init_grid_data(self.width, self.height),
+            cells: Game::init_cells(self.width, self.height),
+            playfield: Game::init_playfield(self.width, self.height),
             current: ControlledTetrimino::new(Tetrimino::default()),
             next: Tetrimino::default(),
-            state: PlayfieldState::Running,
+            state: GameState::Startup,
         }
     }
 }
 
 #[wasm_bindgen]
 pub struct GameIO {
-    playfield: Playfield,
+    game: Game,
 }
 
 impl Default for GameIO {
     fn default() -> Self {
         use crate::utils::set_panic_hook;
         set_panic_hook();
-        Self {
-            playfield: Playfield::new(),
-        }
+        Self { game: Game::new() }
     }
 }
 
@@ -589,70 +586,70 @@ impl GameIO {
     }
 
     pub fn width(&self) -> u32 {
-        self.playfield.width()
+        self.game.width()
     }
 
     pub fn height(&self) -> u32 {
-        self.playfield.height()
+        self.game.height()
     }
 
-    pub fn view_data_ptr(&mut self) -> *const Cell {
-        self.playfield.view_data_ptr()
+    pub fn cells_ptr(&mut self) -> *const Cell {
+        self.game.cells_ptr()
     }
 
     pub fn get_index(&self, row: u32, column: u32) -> usize {
-        self.playfield.get_view_data_index(row, column)
+        self.game.get_cells_index(row, column)
     }
 
     pub fn run(&mut self) {
-        self.playfield.run();
+        self.game.run();
     }
 
     pub fn restart(&mut self) {
-        self.playfield.restart();
+        self.game.restart();
     }
 
     pub fn update(&mut self) {
-        self.playfield.update();
+        self.game.update();
     }
 
     pub fn is_gameover(&self) -> bool {
-        self.playfield.is_gameover()
+        self.game.is_gameover()
     }
 
     pub fn is_pause(&self) -> bool {
-        self.playfield.is_pause()
+        self.game.is_pause()
     }
 
     pub fn is_startup(&self) -> bool {
-        self.playfield.is_startup()
+        self.game.is_startup()
     }
 
     pub fn is_running(&self) -> bool {
-        self.playfield.is_running()
+        self.game.is_running()
     }
 
     pub fn toggle_pause(&mut self) {
-        self.playfield.toggle_pause();
+        self.game.toggle_pause();
     }
 
     pub fn move_left(&mut self) {
-        self.playfield.move_left();
+        self.game.move_left();
     }
 
     pub fn move_right(&mut self) {
-        self.playfield.move_right();
+        self.game.move_right();
     }
 
     pub fn soft_drop(&mut self) {
-        self.playfield.dropdown(1, true);
+        self.game.dropdown(1, true);
     }
 
     pub fn rotate_left(&mut self) {
-        self.playfield.rotate_left();
+        self.game.rotate_left();
     }
 
     pub fn rotate_right(&mut self) {
-        self.playfield.rotate_right();
+        self.game.rotate_right();
     }
 }

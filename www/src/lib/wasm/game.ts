@@ -43,7 +43,7 @@ const _drawCells = (args: {
   cellSize: number;
   game: GameIO;
 }) => {
-  const cellsPtr = args.game.view_data_ptr();
+  const cellsPtr = args.game.cells_ptr();
   const width = args.game.width();
   const height = args.game.height();
   const isGameover = args.game.is_gameover();
@@ -68,7 +68,7 @@ const _drawCells = (args: {
         }
       } else {
         switch (cells[idx]) {
-          case Cell.Filler: {
+          case Cell.Tetrion: {
             args.ctx.fillStyle = COLOR.FILLER;
             break;
           }
@@ -126,11 +126,9 @@ const _drawStartupScreen = (args: {
   if (!args.game.is_startup()) {
     return;
   }
-  args.ctx.clearRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
-
   args.ctx.beginPath();
   // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-  args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 0] + ')';
+  args.ctx.fillStyle = 'rgba(' + [0, 0, 0, 1] + ')';
   args.ctx.fillRect(0, 0, CANVAS.WIDTH, CANVAS.HEIGHT);
 
   const fontSize = FONT.SMALL_SIZE;
