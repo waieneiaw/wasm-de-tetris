@@ -81,13 +81,6 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-namespace': 'off',
 
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': [
-      'error',
-      {
-        additionalHooks: '(useRecoilCallback|useRecoilTransaction_UNSTABLE)',
-      },
-    ],
     'react/no-danger': 'error',
     'react/self-closing-comp': [
       'error',
@@ -100,7 +93,7 @@ module.exports = {
     'react/no-unused-state': 'error',
     'react/no-unused-prop-types': 'error',
 
-    '@next/next/no-img-element': 'off',
+    'react-hooks/rules-of-hooks': 'error',
   },
   settings: {
     'import/parsers': {
